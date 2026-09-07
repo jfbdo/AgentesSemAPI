@@ -1,0 +1,34 @@
+# Execuções e artefatos gerados
+runs/
+*.log
+orchestrator.log
+
+# Arquivos de estado e temporários
+*.tmp
+*.processing
+*.done
+*.err
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.pytest_cache/
+
+# Ambientes, chaves e credenciais
+.env*
+auth.json
+token*.txt
+*.pem
+*.key
+
+# IDEs e editores
+.vscode/
+.idea/
+*.swp
+*.swo
