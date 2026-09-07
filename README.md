@@ -1,185 +1,179 @@
-# 🚀 Esteira Multiagente Local: Antigravity + OpenCode CLI + Daemon Python
+# AgentesSemAPI
 
-Este projeto implementa uma **arquitetura multiagente local e determinística**, desacoplando a camada de alto nível (**Planejador & Orquestrador Central no Antigravity / Gemini**) da camada de execução física de código (**OpenCode CLI autenticado no ChatGPT Plus**) através de um motor de fila assíncrono em Python (**`orchestrator.py`**).
+Eu criei este projeto para ter vários agentes de IA trabalhando em equipe no meu computador, sem precisar gastar uma fortuna com créditos de API.
 
-> **Autoria & Validação Cruzada:**  
-> - **Escritor da Documentação:** Gemini (Antigravity)  
-> - **Revisor Técnico (Peer Review):** GPT (via OpenCode CLI)
+A ideia é simples: uso o **OpenCode CLI** autenticado com minha conta do **ChatGPT Plus via OAuth** e um pequeno orquestrador em Python. Assim, consigo executar vários agentes ao mesmo tempo com os melhores modelos da OpenAI disponíveis na minha assinatura, sem pagar uma API separada.
 
----
+> Na prática, não é IA “sem custo”: é IA sem cobrança adicional de API, usando uma assinatura do ChatGPT que eu já tenho. Os limites de uso da conta continuam valendo.
 
-## 🏗️ 1. Arquitetura do Sistema
+## 💡 O que este projeto faz
 
-```mermaid
-flowchart TD
-    A[🧠 Planejador Central: Antigravity / Gemini] -->|Gera atomicamente pipeline.json| B[📁 Raiz do Projeto]
-    B -->|Detecta criação de arquivo| C[⚙️ orchestrator.py: Daemon Assíncrono]
-    C -->|Valida contrato estrito & ordena etapas| D[🔀 Pool de Concorrência: MAX_WORKERS=3]
-    D -->|Dispara subprocessos isolados por etapa| E[🤖 OpenCode CLI: ChatGPT Plus]
-    E -->|Gera artefatos de código & logs de stream| F[📦 runs/run_id/]
-    F -->|Preflight py_compile & verificação física| G[📊 resultado.json]
-    G -->|Auditoria & Relatório Final| A
-    C -->|Interface visual com rich| H[🖥️ Terminal Monitor ao Vivo]
+Eu descrevo o que quero construir, o trabalho é dividido em tarefas e cada tarefa é entregue a um agente. Os agentes podem criar código, documentação, testes e outros arquivos.
+
+O projeto cuida automaticamente de:
+
+- organizar a fila de tarefas;
+- executar até 3 agentes em paralelo por padrão;
+- respeitar a ordem entre as etapas;
+- interromper o pipeline se uma etapa falhar;
+- salvar cada execução, arquivo e log em uma pasta separada;
+- verificar se o arquivo pedido foi criado;
+- validar a sintaxe de arquivos Python gerados.
+
+## ⚙️ Como funciona
+
+O fluxo tem apenas três peças:
+
+1. **Antigravity / Gemini planeja**
+
+   Eu explico o objetivo, e ele divide o trabalho em tarefas pequenas e gera o arquivo `pipeline.json`.
+
+2. **`orchestrator.py` organiza**
+
+   Esse é o motorzinho assíncrono que fica rodando em segundo plano. Ele encontra o `pipeline.json`, valida as tarefas, controla a fila e o paralelismo e mostra um painel visual no terminal.
+
+3. **OpenCode CLI executa**
+
+   Para cada tarefa, o orquestrador chama o OpenCode com o modelo GPT escolhido. O agente trabalha em uma pasta isolada e entrega o arquivo pronto. Quando o resultado é Python, o orquestrador também confere a sintaxe.
+
+```text
+Antigravity / Gemini
+        ↓ cria
+   pipeline.json
+        ↓ lido por
+  orchestrator.py
+        ↓ chama
+   OpenCode CLI
+        ↓ entrega
+ arquivos + logs + resultado.json
 ```
 
-### Divisão de Responsabilidades:
-1. **Planejador Central (Antigravity / Gemini):** Lê contextos complexos, planeja soluções, decompõe problemas em etapas atômicas (`ordem: 1, 2, ...`), submete manifestos em JSON e audita os artefatos gerados.
-2. **Motor de Execução Local (`orchestrator.py`):** Daemon assíncrono em Python com suporte a concorrência (`asyncio.gather`), semáforos configuráveis, preflight de sintaxe (`python3 -m py_compile`), timeout por tarefa e painel visual em terminal via `rich`.
-3. **Executor Local (OpenCode CLI):** Agente de execução que roda isolado em `runs/<run_id>/`, acessando os modelos de ponta da OpenAI (família GPT-5) via ChatGPT Plus OAuth para aplicar patches e gerar código.
+## 🚀 Como eu rodo em 4 passos
 
----
+### 1. Preparo os pré-requisitos
 
-## 📋 2. Pré-requisitos para Replicação
+Eu uso:
 
-Para replicar este projeto em outro computador, você precisará de:
+- Linux ou macOS;
+- Python 3.10 ou mais recente;
+- uma assinatura ativa do ChatGPT Plus, Team ou Enterprise;
+- [OpenCode CLI](https://opencode.ai) instalado.
 
-- **Sistema Operacional:** Linux (testado e homologado no Linux Mint / Ubuntu / Debian) ou macOS.
-- **Python:** Versão 3.10 ou superior (`python3 --version`).
-- **OpenCode CLI:** Ferramenta de linha de comando oficial da [OpenCode](https://opencode.ai).
-- **Conta OpenAI:** Assinatura ativa do **ChatGPT Plus** (ou Team/Enterprise) para autenticação OAuth via navegador.
+Se ainda não tiver o OpenCode:
 
----
-
-## 🛠️ 3. Passo a Passo de Configuração em uma Nova Máquina
-
-### Passo 1: Clonar ou Baixar os Arquivos do Projeto
 ```bash
-git clone <url-do-repositorio> "Agentes de IA"
-cd "Agentes de IA"
+curl -fsSL https://opencode.ai/install | bash
 ```
 
-### Passo 2: Instalar as Dependências Python
-Instale a biblioteca `rich` para o monitor visual no terminal:
+Depois de clonar o repositório, entro na pasta:
+
+```bash
+git clone <url-do-repositorio>
+cd AgentesSemAPI
+```
+
+### 2. Instalo a dependência Python
+
 ```bash
 pip install -r requirements.txt
 ```
 
-### Passo 3: Instalar o OpenCode CLI
-Execute o comando oficial de instalação:
-```bash
-curl -fsSL https://opencode.ai/install | bash
-```
-> *Nota: Certifique-se de que `~/.opencode/bin` está presente no seu `PATH` (adicione ao seu `~/.bashrc` se necessário).*
+A única dependência atual é o `rich`, usado para montar o painel no terminal.
 
-### Passo 4: Autenticar o OpenCode no ChatGPT Plus
-Vincule sua conta ChatGPT via OAuth no navegador:
+### 3. Conecto o OpenCode ao ChatGPT
+
 ```bash
 opencode providers login
 ```
-Escolha a opção **OpenAI** e complete a autorização no navegador.
 
-### Passo 5: Verificação do Ambiente
-Confirme que todas as ferramentas estão prontas para uso:
-```bash
-python3 --version
-which opencode
-opencode auth list
-opencode models
-```
+Escolho **OpenAI** e concluo o login no navegador. A autenticação é feita por OAuth; eu não coloco chave de API no projeto.
 
----
+### 4. Inicio o monitor
 
-## 💻 4. Como Operar o Sistema
-
-### 1. Iniciar o Monitor Visual no Terminal
-Abra uma janela de terminal e inicie o orquestrador usando o script facilitador com auto-restart:
 ```bash
 ./start_monitor.sh
 ```
-Ou diretamente via Python:
-```bash
-python3 orchestrator.py
-```
 
-Você verá o painel estilizado com status **ONLINE** aguardando manifestos:
-```text
-╭────────────────────────── 🚀 ORQUESTRADOR MULTIAGENTE LOCAL ──────────────────────────╮
-│ Status: ONLINE - Monitorando pipeline.json                                            │
-│ Workers Concorrentes: 3                                                               │
-│ Runner Ativo: OpenCode CLI (ChatGPT Plus OAuth)                                       │
-│ Diretório Base: /home/usuario/Projetos/Agentes de IA                                  │
-╰──────────────────────────────────────────────────────────────────────────────────────╯
-```
+Quando o painel mostrar `ONLINE`, está pronto. Agora só preciso colocar um `pipeline.json` na raiz do projeto.
 
-### 2. Submissão de Tarefas (`pipeline.json`)
-O orquestrador vigia a presença do arquivo `pipeline.json` na raiz. 
+## 📝 Exemplo de tarefa
 
-> **Regra Obrigatória:** Sempre escreva primeiro como `pipeline.json.tmp` e em seguida renomeie atomicamente para `pipeline.json` (`mv pipeline.json.tmp pipeline.json`).
+Este exemplo pede para um agente criar uma pequena calculadora em Python:
 
-#### Contrato Estrito de 7 Campos por Tarefa:
 ```json
 [
   {
-    "id": "tarefa_01",
+    "id": "criar_calculadora",
     "ordem": 1,
     "runner": "opencode",
-    "modelo": "openai/gpt-5.4-mini",
-    "timeout": 120,
-    "prompt": "Instrução clara, autossuficiente e direta de código...",
-    "arquivo_saida": "modulo.py"
+    "modelo": "openai/gpt-5.6-sol",
+    "timeout": 180,
+    "prompt": "Crie uma calculadora de linha de comando em Python, com soma, subtração, multiplicação e divisão. Salve o código em calculadora.py e teste antes de concluir.",
+    "arquivo_saida": "calculadora.py"
   }
 ]
 ```
 
-| Campo | Tipo | Descrição |
-| :--- | :--- | :--- |
-| `id` | `str` | Identificador alfanumérico único da tarefa. |
-| `ordem` | `int` | Inteiro positivo sequencial (1, 2, 3...). Tarefas da mesma ordem rodam em **paralelo**. A ordem $N+1$ só inicia se todas da ordem $N$ concluírem com sucesso. |
-| `runner` | `str` | Fixo em `"opencode"`. |
-| `modelo` | `str` | Identificador suportado localmente (ex.: `"openai/gpt-5.4-mini"`, `"openai/gpt-5.5"`, `"openai/gpt-5.6-luna"`). |
-| `timeout` | `int` | Tempo máximo em segundos para a tarefa (ex.: `120`). |
-| `prompt` | `str` | Instrução de código completa e autocontida para o modelo. |
-| `arquivo_saida`| `str` | Caminho relativo do artefato esperado dentro da pasta da run. |
+Cada campo tem uma função bem direta:
 
----
+| Campo | O que significa |
+| --- | --- |
+| `id` | Um nome único para eu reconhecer a tarefa. |
+| `ordem` | A etapa da tarefa. Tarefas com a mesma ordem rodam juntas. |
+| `runner` | O executor. Neste projeto, uso sempre `opencode`. |
+| `modelo` | O modelo GPT que vai executar o trabalho. |
+| `timeout` | Quanto tempo o agente pode usar, em segundos. |
+| `prompt` | A instrução completa do que deve ser feito. |
+| `arquivo_saida` | O arquivo que precisa existir quando a tarefa terminar. |
 
-## 📂 5. Estrutura de Diretórios e Ciclo de Execução
+Para evitar que o monitor leia um JSON ainda incompleto, eu primeiro salvo como `pipeline.json.tmp` e depois renomeio:
 
-```text
-Agentes de IA/
-├── orchestrator.py          # Motor assíncrono de orquestração local
-├── start_monitor.sh         # Script facilitador de inicialização do terminal
-├── requirements.txt         # Dependências mínimas do orquestrador (rich)
-├── .gitignore               # Proteção contra commit de credenciais e logs
-├── README.md                # Esta documentação completa
-├── orchestrator.log         # Log consolidado histórico de execuções
-├── pipeline.json.done       # Último manifesto processado com sucesso
-└── runs/                    # Diretório isolado contendo histórico de runs
-    └── run_20260907_165207_d488/
-        ├── pipeline.json    # Cópia imutável do manifesto executado
-        ├── resultado.json   # Sumário estrito de status e tempos da rodada
-        ├── log_tarefa_01.log# Logs de stream (STDOUT e STDERR) da tarefa
-        └── modulo.py        # Código gerado e validado por preflight
+```bash
+mv pipeline.json.tmp pipeline.json
 ```
 
----
+O orquestrador detecta o arquivo automaticamente. Ao terminar, encontro tudo em:
 
-## 🔍 6. Auditoria de Qualidade e Preflight
+```text
+runs/run_<data>_<id>/
+├── pipeline.json
+├── resultado.json
+├── log_criar_calculadora.log
+└── calculadora.py
+```
 
-O `orchestrator.py` possui proteções integradas de qualidade:
-1. **Preflight de Sintaxe:** Antes de marcar uma tarefa Python (`.py`) como `SUCESSO`, executa `python3 -m py_compile <arquivo>`. Se houver qualquer erro de indentação ou sintaxe, a tarefa é imediatamente marcada como `FALHA` com o traceback registrado no `resultado.json`.
-2. **Validação Física:** Garante que o arquivo existe e seu tamanho é superior a 0 bytes.
-3. **Isolamento de Runs:** Cada execução ocorre em uma subpasta dedicada com UUID e timestamp, evitando colisão de artefatos.
+### Paralelismo sem complicação
 
----
+Se eu colocar três tarefas com `"ordem": 1`, as três podem rodar ao mesmo tempo. Uma tarefa com `"ordem": 2` só começa depois que todas as tarefas da etapa 1 terminarem com sucesso.
 
-## 🚨 7. Resolução de Problemas (Troubleshooting)
+Por padrão, o projeto usa até 3 agentes simultâneos. Se eu quiser mudar esse número:
 
-| Sintoma | Causa Provável | Solução Recomendada |
-| :--- | :--- | :--- |
-| `opencode: command not found` | Binário não adicionado ao `PATH` | Execute `export PATH="$HOME/.opencode/bin:$PATH"` ou adicione ao `~/.bashrc`. |
-| `OpenCode auth error / Bad Request` | Modelo incompatível com OAuth do ChatGPT | Use os modelos homologados: `openai/gpt-5.4-mini`, `openai/gpt-5.5` ou `openai/gpt-5.6-luna`. |
-| `Falha de validação do manifesto` | Campos ausentes ou tipos inválidos | Verifique se os 7 campos exatos estão presentes e se `ordem` é um inteiro positivo. |
-| `Timeout excedido` | Tarefa complexa exigiu mais tempo de resposta | Aumente o campo `"timeout"` no `pipeline.json` (ex.: de `120` para `180`). |
-| `Terminal fecha ao encerrar` | Execução direta sem loop | Utilize o `./start_monitor.sh`, que possui loop com auto-restart integrado. |
+```bash
+MAX_WORKERS=5 ./start_monitor.sh
+```
 
----
+## 🛡️ Segurança
 
-## 🧪 8. Testes Validados com Sucesso na Esteira
+Eu deixei o repositório preparado para ser publicado sem expor minhas credenciais:
 
-1. **Smoke Test:** Validação de comunicação, escrita e leitura de integridade de arquivo no disco (`smoke_test.py`).
-2. **Paralelismo Real (3 Workers):** Geração concorrente dos módulos `extractor.py`, `transformer.py` e `reporter.py` com ganho de velocidade superior a 2.4x.
-3. **Pipeline Sequencial de 2 Etapas:** Integração dos 3 módulos gerados na Etapa 1 através de um script integrador `main.py` na Etapa 2.
-4. **Inspeção de Sistema Operacional Real:** Diagnóstico do ambiente visual de temas do Linux Mint Cinnamon via `gsettings`.
-5. **Multi-Modelos Concorrentes:** 3 agentes rodando simultaneamente em 3 modelos GPT distintos (`GPT-5.4-Mini`, `GPT-5.5` e `GPT-5.6-Luna`).
-6. **Peer Review de Documentação:** Análise crítica automatizada da documentação realizada pelo GPT com emissão de parecer formal em Markdown.
+- não existem chaves de API gravadas no código;
+- o login da OpenAI é feito pelo próprio OpenCode via OAuth;
+- o `.gitignore` bloqueia arquivos `.env`, tokens, chaves, logs e dados de autenticação;
+- a pasta `runs/` e os arquivos temporários do pipeline não entram no Git;
+- caminhos de saída absolutos ou contendo `..` são rejeitados pelo orquestrador.
+
+Mesmo com essas proteções, eu sempre reviso o `git status` antes de publicar qualquer alteração. Credenciais, tokens e arquivos pessoais nunca devem ser adicionados manualmente ao repositório.
+
+## Estrutura rápida
+
+```text
+AgentesSemAPI/
+├── orchestrator.py      # gerencia tarefas, etapas e agentes
+├── start_monitor.sh     # inicia o painel com reinício automático
+├── requirements.txt     # dependências Python
+├── pipeline.json        # tarefas que eu quero executar
+├── runs/                # resultados e logs locais
+└── .gitignore           # impede o versionamento de dados sensíveis
+```
+
+É isso: eu inicio o monitor, gero um `pipeline.json` e deixo os agentes trabalharem.
