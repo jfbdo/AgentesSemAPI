@@ -1,104 +1,106 @@
 # AgentesSemAPI
 
-Eu criei este projeto para ter vários agentes de IA trabalhando em equipe no meu computador, sem precisar gastar uma fortuna com créditos de API.
+O **AgentesSemAPI** é um projeto desenvolvido para executar múltiplos agentes de IA trabalhando em equipe, diretamente no seu computador.
 
-A ideia é simples: uso o **OpenCode CLI** autenticado com minha conta do **ChatGPT Plus via OAuth** e um pequeno orquestrador em Python. Assim, consigo executar vários agentes ao mesmo tempo com os melhores modelos da OpenAI disponíveis na minha assinatura, sem pagar uma API separada.
+A proposta é simples: aproveitar uma assinatura do ChatGPT Plus por meio do **OpenCode CLI**, autenticado via OAuth, para executar tarefas com modelos GPT sem cobrança por token de API. Um orquestrador em Python organiza as etapas, controla os agentes e reúne os resultados de cada execução.
 
-> Na prática, não é IA “sem custo”: é IA sem cobrança adicional de API, usando uma assinatura do ChatGPT que eu já tenho. Os limites de uso da conta continuam valendo.
+> **Importante:** o projeto evita cobranças adicionais de API, mas depende de uma assinatura ativa do ChatGPT Plus. Os limites e as regras de uso da conta continuam válidos.
 
-## 💡 O que este projeto faz
+## O que o projeto faz
 
-Eu descrevo o que quero construir, o trabalho é dividido em tarefas e cada tarefa é entregue a um agente. Os agentes podem criar código, documentação, testes e outros arquivos.
+A partir de um objetivo, o trabalho é dividido em tarefas que podem criar código, documentação, testes e outros arquivos. O AgentesSemAPI cuida de todo o fluxo:
 
-O projeto cuida automaticamente de:
+- organiza as tarefas por etapas;
+- executa até três agentes em paralelo por padrão;
+- aguarda a conclusão de uma etapa antes de iniciar a próxima;
+- interrompe o pipeline quando uma etapa falha;
+- armazena arquivos e logs em uma pasta exclusiva para cada execução;
+- confirma se o arquivo solicitado foi criado e não está vazio;
+- valida a sintaxe de arquivos Python gerados.
 
-- organizar a fila de tarefas;
-- executar até 3 agentes em paralelo por padrão;
-- respeitar a ordem entre as etapas;
-- interromper o pipeline se uma etapa falhar;
-- salvar cada execução, arquivo e log em uma pasta separada;
-- verificar se o arquivo pedido foi criado;
-- validar a sintaxe de arquivos Python gerados.
+## Como funciona
 
-## ⚙️ Como funciona
+O fluxo é formado por três componentes principais:
 
-O fluxo tem apenas três peças:
+### 1. Antigravity / Gemini planeja
 
-1. **Antigravity / Gemini planeja**
+O objetivo do projeto é informado ao Antigravity/Gemini, que divide o trabalho em tarefas menores e gera o arquivo `pipeline.json`.
 
-   Eu explico o objetivo, e ele divide o trabalho em tarefas pequenas e gera o arquivo `pipeline.json`.
+### 2. `orchestrator.py` gerencia
 
-2. **`orchestrator.py` organiza**
+O orquestrador monitora o `pipeline.json`, valida sua estrutura, organiza as etapas e controla o paralelismo. Durante a execução, um painel visual no terminal mostra o andamento e o resultado das tarefas.
 
-   Esse é o motorzinho assíncrono que fica rodando em segundo plano. Ele encontra o `pipeline.json`, valida as tarefas, controla a fila e o paralelismo e mostra um painel visual no terminal.
+### 3. OpenCode CLI executa
 
-3. **OpenCode CLI executa**
-
-   Para cada tarefa, o orquestrador chama o OpenCode com o modelo GPT escolhido. O agente trabalha em uma pasta isolada e entrega o arquivo pronto. Quando o resultado é Python, o orquestrador também confere a sintaxe.
+Cada tarefa é enviada ao OpenCode CLI com o modelo GPT definido no pipeline. O agente trabalha dentro da pasta da execução, cria o arquivo solicitado e registra sua atividade. Ao final, o orquestrador verifica o artefato gerado e, no caso de arquivos Python, também valida a sintaxe.
 
 ```text
 Antigravity / Gemini
-        ↓ cria
+        |
+        v
    pipeline.json
-        ↓ lido por
+        |
+        v
   orchestrator.py
-        ↓ chama
+        |
+        v
    OpenCode CLI
-        ↓ entrega
- arquivos + logs + resultado.json
+        |
+        v
+arquivos + logs + resultado.json
 ```
 
-## 🚀 Como eu rodo em 4 passos
+## Instalação e execução
 
-### 1. Preparo os pré-requisitos
+### 1. Verifique os pré-requisitos
 
-Eu uso:
+Antes de começar, tenha instalado:
 
 - Linux ou macOS;
 - Python 3.10 ou mais recente;
-- uma assinatura ativa do ChatGPT Plus, Team ou Enterprise;
-- [OpenCode CLI](https://opencode.ai) instalado.
+- uma assinatura ativa do ChatGPT Plus;
+- [OpenCode CLI](https://opencode.ai).
 
-Se ainda não tiver o OpenCode:
+Para instalar o OpenCode CLI:
 
 ```bash
 curl -fsSL https://opencode.ai/install | bash
 ```
 
-Depois de clonar o repositório, entro na pasta:
+Clone o repositório e acesse a pasta do projeto:
 
 ```bash
 git clone <url-do-repositorio>
 cd AgentesSemAPI
 ```
 
-### 2. Instalo a dependência Python
+### 2. Instale a dependência Python
 
 ```bash
 pip install -r requirements.txt
 ```
 
-A única dependência atual é o `rich`, usado para montar o painel no terminal.
+A dependência atual é o `rich`, responsável pelo painel visual exibido no terminal.
 
-### 3. Conecto o OpenCode ao ChatGPT
+### 3. Conecte o OpenCode ao ChatGPT
 
 ```bash
 opencode providers login
 ```
 
-Escolho **OpenAI** e concluo o login no navegador. A autenticação é feita por OAuth; eu não coloco chave de API no projeto.
+Selecione **OpenAI** e conclua a autenticação no navegador. O acesso é feito via OAuth, sem a necessidade de adicionar uma chave de API ao projeto.
 
-### 4. Inicio o monitor
+### 4. Inicie o monitor
 
 ```bash
 ./start_monitor.sh
 ```
 
-Quando o painel mostrar `ONLINE`, está pronto. Agora só preciso colocar um `pipeline.json` na raiz do projeto.
+Quando o painel mostrar o status `ONLINE`, o orquestrador estará pronto. Para iniciar um trabalho, basta disponibilizar um arquivo `pipeline.json` na raiz do projeto.
 
-## 📝 Exemplo de tarefa
+## Exemplo de `pipeline.json`
 
-Este exemplo pede para um agente criar uma pequena calculadora em Python:
+O exemplo abaixo solicita a criação de uma calculadora simples em Python:
 
 ```json
 [
@@ -114,66 +116,67 @@ Este exemplo pede para um agente criar uma pequena calculadora em Python:
 ]
 ```
 
-Cada campo tem uma função bem direta:
+### O que significa cada campo
 
-| Campo | O que significa |
+| Campo | Descrição |
 | --- | --- |
-| `id` | Um nome único para eu reconhecer a tarefa. |
-| `ordem` | A etapa da tarefa. Tarefas com a mesma ordem rodam juntas. |
-| `runner` | O executor. Neste projeto, uso sempre `opencode`. |
-| `modelo` | O modelo GPT que vai executar o trabalho. |
-| `timeout` | Quanto tempo o agente pode usar, em segundos. |
-| `prompt` | A instrução completa do que deve ser feito. |
-| `arquivo_saida` | O arquivo que precisa existir quando a tarefa terminar. |
+| `id` | Nome único da tarefa. Use letras, números, hífen ou sublinhado. |
+| `ordem` | Etapa em que a tarefa será executada. Tarefas com a mesma ordem podem rodar juntas. |
+| `runner` | Executor da tarefa. Atualmente, o valor aceito é `opencode`. |
+| `modelo` | Modelo GPT que executará o trabalho. |
+| `timeout` | Tempo máximo da tarefa, em segundos. |
+| `prompt` | Instrução completa para o agente. |
+| `arquivo_saida` | Arquivo que deve existir ao final da tarefa. |
 
-Para evitar que o monitor leia um JSON ainda incompleto, eu primeiro salvo como `pipeline.json.tmp` e depois renomeio:
+Para impedir que o monitor capture um JSON ainda incompleto, prepare o conteúdo com um nome temporário e renomeie o arquivo quando estiver pronto:
 
 ```bash
 mv pipeline.json.tmp pipeline.json
 ```
 
-O orquestrador detecta o arquivo automaticamente. Ao terminar, encontro tudo em:
+O arquivo será detectado automaticamente. Ao final, os resultados ficarão em uma estrutura semelhante a esta:
 
 ```text
 runs/run_<data>_<id>/
-├── pipeline.json
-├── resultado.json
-├── log_criar_calculadora.log
-└── calculadora.py
+|-- pipeline.json
+|-- resultado.json
+|-- log_criar_calculadora.log
+`-- calculadora.py
 ```
 
-### Paralelismo sem complicação
+## Etapas e paralelismo
 
-Se eu colocar três tarefas com `"ordem": 1`, as três podem rodar ao mesmo tempo. Uma tarefa com `"ordem": 2` só começa depois que todas as tarefas da etapa 1 terminarem com sucesso.
+Tarefas com o mesmo valor em `ordem` pertencem à mesma etapa e podem ser executadas em paralelo. Por exemplo, três tarefas com `"ordem": 1` podem começar juntas. Uma tarefa com `"ordem": 2` só será iniciada quando todas as tarefas da etapa anterior terminarem com sucesso.
 
-Por padrão, o projeto usa até 3 agentes simultâneos. Se eu quiser mudar esse número:
+O limite padrão é de três agentes simultâneos. Para alterar esse valor, defina `MAX_WORKERS` ao iniciar o monitor:
 
 ```bash
 MAX_WORKERS=5 ./start_monitor.sh
 ```
 
-## 🛡️ Segurança
+## Segurança
 
-Eu deixei o repositório preparado para ser publicado sem expor minhas credenciais:
+O projeto foi estruturado para reduzir o risco de exposição de credenciais e manter cada execução organizada:
 
-- não existem chaves de API gravadas no código;
-- o login da OpenAI é feito pelo próprio OpenCode via OAuth;
-- o `.gitignore` bloqueia arquivos `.env`, tokens, chaves, logs e dados de autenticação;
-- a pasta `runs/` e os arquivos temporários do pipeline não entram no Git;
+- nenhuma chave de API é armazenada no código;
+- a autenticação da OpenAI é realizada pelo OpenCode via OAuth;
+- o `.gitignore` exclui arquivos `.env`, tokens, chaves, logs e dados de autenticação;
+- a pasta `runs/` e os arquivos temporários do pipeline não são versionados;
+- cada execução recebe uma pasta própria dentro de `runs/`, funcionando como sandbox para seus arquivos e logs;
 - caminhos de saída absolutos ou contendo `..` são rejeitados pelo orquestrador.
 
-Mesmo com essas proteções, eu sempre reviso o `git status` antes de publicar qualquer alteração. Credenciais, tokens e arquivos pessoais nunca devem ser adicionados manualmente ao repositório.
+Mesmo com essas proteções, é recomendável revisar `git status` antes de publicar alterações. Credenciais, tokens e arquivos pessoais nunca devem ser adicionados manualmente ao repositório.
 
-## Estrutura rápida
+## Estrutura do projeto
 
 ```text
 AgentesSemAPI/
-├── orchestrator.py      # gerencia tarefas, etapas e agentes
-├── start_monitor.sh     # inicia o painel com reinício automático
-├── requirements.txt     # dependências Python
-├── pipeline.json        # tarefas que eu quero executar
-├── runs/                # resultados e logs locais
-└── .gitignore           # impede o versionamento de dados sensíveis
+|-- orchestrator.py     # gerencia tarefas, etapas e agentes
+|-- start_monitor.sh    # inicia o monitor com reinício automático
+|-- requirements.txt    # dependências Python
+|-- pipeline.json       # define as tarefas da próxima execução
+|-- runs/               # armazena resultados e logs localmente
+`-- .gitignore          # evita o versionamento de dados sensíveis
 ```
 
-É isso: eu inicio o monitor, gero um `pipeline.json` e deixo os agentes trabalharem.
+Com o monitor ativo e o `pipeline.json` disponível, o restante do fluxo é automático: as tarefas são organizadas, executadas e validadas, e os resultados ficam registrados na pasta da execução.
