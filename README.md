@@ -1,182 +1,123 @@
 # AgentesSemAPI
 
-O **AgentesSemAPI** é um projeto desenvolvido para executar múltiplos agentes de IA trabalhando em equipe, diretamente no seu computador.
+> **Coordenação autônoma de equipes de agentes de IA locais, sem chaves de API pagas e sem cobranças por token.**
 
-A proposta é simples: aproveitar uma assinatura do ChatGPT Plus por meio do **OpenCode CLI**, autenticado via OAuth, para executar tarefas com modelos GPT sem cobrança por token de API. Um orquestrador em Python organiza as etapas, controla os agentes e reúne os resultados de cada execução.
+O **AgentesSemAPI** executa projetos e atividades complexas divididas entre múltiplos agentes de IA especializados trabalhando em paralelo e em rodadas sequenciais, utilizando **exclusivamente o login das assinaturas que você já possui** nos CLIs oficiais dos provedores:
 
-> **Importante:** o projeto evita cobranças adicionais de API, mas depende de uma assinatura ativa do ChatGPT Plus. Os limites e as regras de uso da conta continuam válidos.
+- 🟢 **OpenAI Codex CLI** (`codex`): Modelos GPT via assinatura ChatGPT Plus/Pro.
+- 🔵 **Google Antigravity CLI** (`agy`): Modelos Gemini via assinatura Google AI Pro/Ultra.
+- 🟣 **Anthropic Claude Code CLI** (`claude`): Modelos Claude via assinatura Claude Pro/Team.
+- 🟡 **OpenCode CLI** (`opencode`): Modelos abertos, livres e de rotação comunitária sem custo.
 
-## O que o projeto faz
+Cada agente possui seu próprio monitor visual com progresso em tempo real, mantendo os logs brutos e de depuração estritamente isolados.
 
-A partir de um objetivo, o trabalho é dividido em tarefas que podem criar código, documentação, testes e outros arquivos. O AgentesSemAPI cuida de todo o fluxo:
+---
 
-- organiza as tarefas por etapas;
-- executa até três agentes em paralelo por padrão;
-- aguarda a conclusão de uma etapa antes de iniciar a próxima;
-- interrompe o pipeline quando uma etapa falha;
-- armazena arquivos e logs em uma pasta exclusiva para cada execução;
-- confirma se o arquivo solicitado foi criado e não está vazio;
-- valida a sintaxe de arquivos Python gerados.
+## ⚡ Início Rápido (Demonstração Offline)
 
-## Como funciona
-
-O fluxo é formado por três componentes principais:
-
-### 1. Antigravity / Gemini planeja
-
-O objetivo do projeto é informado ao Antigravity/Gemini, que divide o trabalho em tarefas menores e gera o arquivo `pipeline.json`.
-
-### 2. `orchestrator.py` gerencia
-
-O orquestrador monitora o `pipeline.json`, valida sua estrutura, organiza as etapas e controla o paralelismo. Durante a execução, um painel visual no terminal mostra o andamento e o resultado das tarefas.
-
-### 3. OpenCode CLI executa
-
-Cada tarefa é enviada ao OpenCode CLI com o modelo GPT definido no pipeline. O agente trabalha dentro da pasta da execução, cria o arquivo solicitado e registra sua atividade. Ao final, o orquestrador verifica o artefato gerado e, no caso de arquivos Python, também valida a sintaxe.
-
-```text
-Antigravity / Gemini
-        |
-        v
-   pipeline.json
-        |
-        v
-  orchestrator.py
-        |
-        v
-   OpenCode CLI
-        |
-        v
-arquivos + logs + resultado.json
-```
-
-## Instalação e execução
-
-### 1. Verifique os pré-requisitos
-
-Antes de começar, tenha instalado:
-
-- Linux ou macOS;
-- Python 3.10 ou mais recente;
-- uma assinatura ativa do ChatGPT Plus;
-- [OpenCode CLI](https://opencode.ai).
-
-Para instalar o OpenCode CLI:
+A demonstração funciona imediatamente **sem internet, sem contas, sem chaves e sem consumir cotas**:
 
 ```bash
-curl -fsSL https://opencode.ai/install | bash
-```
-
-Clone o repositório e acesse a pasta do projeto:
-
-```bash
-git clone <url-do-repositorio>
+git clone https://github.com/jfbdo/AgentesSemAPI.git
 cd AgentesSemAPI
+./iniciar.sh
 ```
 
-### 2. Instale a dependência Python
+Escolha a opção **`2 • Experimentar / Demonstração`** para ver o coordenador e os agentes especialistas executando em tempo real.
 
-```bash
-pip install -r requirements.txt
-```
+---
 
-A dependência atual é o `rich`, responsável pelo painel visual exibido no terminal.
+## 🧭 Menu Interativo (`./iniciar.sh`)
 
-### 3. Conecte o OpenCode ao ChatGPT
-
-```bash
-opencode providers login
-```
-
-Selecione **OpenAI** e conclua a autenticação no navegador. O acesso é feito via OAuth, sem a necessidade de adicionar uma chave de API ao projeto.
-
-### 4. Inicie o monitor
-
-```bash
-./start_monitor.sh
-```
-
-Quando o painel mostrar o status `ONLINE`, o orquestrador estará pronto. Para iniciar um trabalho, basta disponibilizar um arquivo `pipeline.json` na raiz do projeto.
-
-## Exemplo de `pipeline.json`
-
-O exemplo abaixo solicita a criação de uma calculadora simples em Python:
-
-```json
-[
-  {
-    "id": "criar_calculadora",
-    "ordem": 1,
-    "runner": "opencode",
-    "modelo": "openai/gpt-5.6-sol",
-    "timeout": 180,
-    "prompt": "Crie uma calculadora de linha de comando em Python, com soma, subtração, multiplicação e divisão. Salve o código em calculadora.py e teste antes de concluir.",
-    "arquivo_saida": "calculadora.py"
-  }
-]
-```
-
-### O que significa cada campo
-
-| Campo | Descrição |
-| --- | --- |
-| `id` | Nome único da tarefa. Use letras, números, hífen ou sublinhado. |
-| `ordem` | Etapa em que a tarefa será executada. Tarefas com a mesma ordem podem rodar juntas. |
-| `runner` | Executor da tarefa. Atualmente, o valor aceito é `opencode`. |
-| `modelo` | Modelo GPT que executará o trabalho. |
-| `timeout` | Tempo máximo da tarefa, em segundos. |
-| `prompt` | Instrução completa para o agente. |
-| `arquivo_saida` | Arquivo que deve existir ao final da tarefa. |
-
-Para impedir que o monitor capture um JSON ainda incompleto, prepare o conteúdo com um nome temporário e renomeie o arquivo quando estiver pronto:
-
-```bash
-mv pipeline.json.tmp pipeline.json
-```
-
-O arquivo será detectado automaticamente. Ao final, os resultados ficarão em uma estrutura semelhante a esta:
+O script `./iniciar.sh` (ou `python3 -m agentes`) apresenta a interface principal do sistema:
 
 ```text
-runs/run_<data>_<id>/
-|-- pipeline.json
-|-- resultado.json
-|-- log_criar_calculadora.log
-`-- calculadora.py
+╭──────────────────────────────────────────────────────────────────╮
+│  🧭 AGENTES SEM API — Assistente de Atividades                   │
+│  Coordenação autônoma com múltiplos agentes, modelos e rodadas   │
+╰──────────────────────────────────────────────────────────────────╯
+
+╭─ Menu Principal ─────────────────────────────────────────────────╮
+   1 │ 🚀 Nova atividade real            (utiliza suas contas conectadas)
+   2 │ 🧪 Experimentar / Demonstração    (sem consumir assinaturas)
+   3 │ ⚙️  Configurar / Conectar contas  (diagnóstico e credenciais)
+   4 │ 📋 Acompanhar / Retomar           (atividades anteriores)
+   0 │ 🚪 Sair                           
+╰──────────────────────────────────────────────────────────────────╯
+› Escolha [1]:
 ```
 
-## Etapas e paralelismo
+### Funcionalidades do Menu:
+1. **Nova atividade real**: Informe o objetivo da sua tarefa em linguagem natural, anexe arquivos de referência (via seletor de arquivos ou terminal) e defina o tamanho da equipe (1 a 8 agentes). O coordenador IA planeja as etapas, escolhe os modelos ideais e você pode revisar/trocar os modelos antes de iniciar.
+2. **Experimentar**: Executa simulações completas offline para validar o fluxo e layout dos painéis.
+3. **Configurar / Conectar contas**: Diagnóstico completo do ambiente (`doctor`) e atalhos diretos para autenticar suas contas de assinatura no navegador (`codex login`, `agy`, `claude auth login`, `opencode providers`).
+4. **Acompanhar / Retomar**: Listagem com status de todas as execuções anteriores, permitindo reconectar ao dashboard, reiniciar do zero, pausar ou migrar modelos.
 
-Tarefas com o mesmo valor em `ordem` pertencem à mesma etapa e podem ser executadas em paralelo. Por exemplo, três tarefas com `"ordem": 1` podem começar juntas. Uma tarefa com `"ordem": 2` só será iniciada quando todas as tarefas da etapa anterior terminarem com sucesso.
+---
 
-O limite padrão é de três agentes simultâneos. Para alterar esse valor, defina `MAX_WORKERS` ao iniciar o monitor:
+## 🖥️ Dashboard Interativo & Atalhos
 
-```bash
-MAX_WORKERS=5 ./start_monitor.sh
-```
+Durante a execução no `tmux`, o dashboard divide a tela entre o Coordenador e os Agentes Executores com controles em tempo real:
 
-## Segurança
+| Tecla / Atalho | Ação |
+| :--- | :--- |
+| **`Alt + Setas`** ou **Clique** | Seleciona o agente desejado no dashboard. |
+| **`Ctrl + ← / →`** | Alterna entre as páginas de agentes (quando houver mais de 4 agentes). |
+| **`t`** | **Trocar modelo em tempo real**: Permite selecionar outro modelo/provedor com cota liberada a qualquer momento, mesmo enquanto o agente estiver executando. |
+| **`p`** | **Pausar / Retomar**: Pausa a execução do agente selecionado imediatamente; pressionar novamente retoma o trabalho. |
+| **`F1`** | **Ajuda do Sistema**: Abre uma janela flutuante com a lista completa de atalhos e comandos sem interferir nos monitores. |
+| **`Ctrl + R`** | **Restaurar Layout**: Reconstrói as janelas e painéis do dashboard caso algum monitor seja fechado acidentalmente. |
+| **`o`** | **Abrir Pasta de Entregas**: Abre a pasta de artefatos finais diretamente no gerenciador de arquivos do sistema (Nautilus, Dolphin, Finder no Mac). |
+| **`Ctrl + B, z`** | Maximiza/restaura o painel do agente selecionado no tmux. |
+| **`Ctrl + B, d`** | Desconecta do dashboard (o trabalho dos agentes continua rodando em segundo plano). |
 
-O projeto foi estruturado para reduzir o risco de exposição de credenciais e manter cada execução organizada:
+---
 
-- nenhuma chave de API é armazenada no código;
-- a autenticação da OpenAI é realizada pelo OpenCode via OAuth;
-- o `.gitignore` exclui arquivos `.env`, tokens, chaves, logs e dados de autenticação;
-- a pasta `runs/` e os arquivos temporários do pipeline não são versionados;
-- cada execução recebe uma pasta própria dentro de `runs/`, funcionando como sandbox para seus arquivos e logs;
-- caminhos de saída absolutos ou contendo `..` são rejeitados pelo orquestrador.
+## 🔄 Revisão do Coordenador & Ação Direta
 
-Mesmo com essas proteções, é recomendável revisar `git status` antes de publicar alterações. Credenciais, tokens e arquivos pessoais nunca devem ser adicionados manualmente ao repositório.
+Ao término de uma atividade, o sistema oferece um ciclo de **revisão orientada por IA**:
+- Você pode analisar as entregas e enviar feedbacks, correções ou pedidos de melhoria.
+- **Ação Direta Automática**: Se você solicitar mover ou copiar os documentos gerados para sua pasta pessoal (ex.: `~/Downloads` ou `~/Desktop`), o coordenador executa a transferência diretamente pelo sistema sem reiniciar a fila de agentes.
+- **Rodadas Cíclicas & Debates**: Se você solicitar debates ou refinamentos sucessivos (ex.: "faça 3 rodadas de revisão entre o programador e o auditor"), o coordenador encadeia novas tarefas onde cada agente aprimora a entrega do anterior.
 
-## Estrutura do projeto
+---
 
-```text
-AgentesSemAPI/
-|-- orchestrator.py     # gerencia tarefas, etapas e agentes
-|-- start_monitor.sh    # inicia o monitor com reinício automático
-|-- requirements.txt    # dependências Python
-|-- pipeline.json       # define as tarefas da próxima execução
-|-- runs/               # armazena resultados e logs localmente
-`-- .gitignore          # evita o versionamento de dados sensíveis
-```
+## 🔒 Segurança & Modo Assinatura Estrito
 
-Com o monitor ativo e o `pipeline.json` disponível, o restante do fluxo é automático: as tarefas são organizadas, executadas e validadas, e os resultados ficam registrados na pasta da execução.
+Este projeto segue rigorosamente o princípio de **autonomia sem credenciais privadas**:
+- **Zero chaves de API**: Nenhuma variável como `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` ou `GEMINI_API_KEY` é permitida. Se detectadas no ambiente, o sistema recusa a execução para evitar consumo acidental de créditos pagos de API.
+- **Autenticação Pessoal Segura**: Todo login é realizado exclusivamente pelo navegador oficial do respectivo CLI (`OAuth/MFA`). O projeto **nunca** lê, extrai, armazena ou trafega tokens de acesso.
+- **Isolamento de Sandbox**: Cada agente opera em sua própria subpasta de trabalho e com sandboxing ativado nos CLIs oficiais, impedindo alterações não autorizadas em arquivos fora do escopo da atividade.
+
+---
+
+## 💻 Compatibilidade Multiplataforma
+
+O **AgentesSemAPI** é compatível nativamente com:
+- **Linux** (Ubuntu, Debian, Fedora, Arch, etc.)
+- **macOS** (Apple Silicon M1/M2/M3/M4 e processadores Intel)
+- **WSL2** (Windows Subsystem for Linux)
+
+### Pré-requisitos:
+- **Python 3.11+** (utiliza apenas módulos da biblioteca padrão do Python).
+- **Git**
+- **tmux** (para o dashboard multipainel):
+  - Ubuntu/Debian: `sudo apt-get install tmux`
+  - macOS (Homebrew): `brew install tmux`
+
+---
+
+## 📚 Documentação Adicional
+
+- [Guia de Instalação e Configuração de Contas](docs/INSTALACAO.md)
+- [Arquitetura do Motor DAG e Isolamento de Tentativas](docs/ARQUITETURA.md)
+- [Especificação do Manifesto de Planos](docs/PLANOS.md)
+- [Solução de Problemas e Diagnóstico](docs/TROUBLESHOOTING.md)
+- [Instruções para IAs Autônomas](AGENTS.md)
+- [Diretrizes de Contribuição](CONTRIBUTING.md)
+
+---
+
+## 📄 Licença
+
+Distribuído sob a licença [MIT](LICENSE).

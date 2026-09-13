@@ -1,0 +1,64 @@
+{
+  "version": 2,
+  "objective": "Demonstração: três agentes com monitoramento individual",
+  "tasks": [
+    {
+      "id": "backend",
+      "role": "Desenvolvedor backend",
+      "summary": "Criar a função de soma.",
+      "stage": "1. Implementação",
+      "runner": "demo",
+      "prompt": "Criar uma função de soma",
+      "outputs": [
+        "soma.py"
+      ],
+      "checks": [
+        {
+          "kind": "python",
+          "path": "soma.py"
+        }
+      ],
+      "depends_on": [],
+      "timeout": 600,
+      "retries": 0
+    },
+    {
+      "id": "documentacao",
+      "role": "Redator técnico",
+      "summary": "Documentar como usar a função.",
+      "stage": "1. Implementação",
+      "runner": "demo",
+      "prompt": "Documentar o exemplo",
+      "outputs": [
+        "guia.md"
+      ],
+      "depends_on": [],
+      "timeout": 600,
+      "retries": 0,
+      "checks": []
+    },
+    {
+      "id": "revisor",
+      "role": "Revisor",
+      "summary": "Revisar o código e a documentação.",
+      "stage": "2. Revisão",
+      "runner": "demo",
+      "prompt": "Revisar as entregas anteriores",
+      "depends_on": [
+        "backend",
+        "documentacao"
+      ],
+      "outputs": [
+        "revisao.json"
+      ],
+      "checks": [
+        {
+          "kind": "json",
+          "path": "revisao.json"
+        }
+      ],
+      "timeout": 600,
+      "retries": 0
+    }
+  ]
+}

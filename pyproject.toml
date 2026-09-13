@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentes-sem-api"
+version = "0.3.0"
+description = "Orquestração local com Codex e Gemini CLI e monitores individuais"
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "MIT"}
+dependencies = []
+
+[project.scripts]
+agentes = "agentes.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["agentes*"]

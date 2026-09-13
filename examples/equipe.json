@@ -1,0 +1,70 @@
+{
+  "version": 2,
+  "objective": "Criar uma função Python de soma com documentação e revisão final",
+  "tasks": [
+    {
+      "id": "backend",
+      "role": "Desenvolvedor backend",
+      "summary": "Criar uma função de soma em Python.",
+      "stage": "1. Implementação",
+      "runner": "codex",
+      "prompt": "Crie soma.py com a função somar(a, b). Use apenas a biblioteca padrão.",
+      "outputs": [
+        "soma.py"
+      ],
+      "checks": [
+        {
+          "kind": "python",
+          "path": "soma.py"
+        }
+      ],
+      "depends_on": [],
+      "timeout": 600,
+      "retries": 1
+    },
+    {
+      "id": "documentacao",
+      "role": "Redator técnico",
+      "summary": "Explicar o uso da função com exemplos.",
+      "stage": "1. Implementação",
+      "runner": "gemini",
+      "prompt": "Escreva guia.md explicando uma função somar(a,b), com exemplos e casos de uso.",
+      "outputs": [
+        "guia.md"
+      ],
+      "depends_on": [],
+      "timeout": 600,
+      "retries": 1,
+      "checks": []
+    },
+    {
+      "id": "revisor",
+      "role": "Revisor",
+      "summary": "Testar e revisar as duas entregas.",
+      "stage": "2. Revisão",
+      "runner": "codex",
+      "prompt": "Leia inputs/backend/soma.py e inputs/documentacao/guia.md. Verifique a implementação com casos positivos, negativos e zero. Escreva revisao.json com approved (boolean), evidencias e limitacoes. Não afirme execução se não puder executar. Se houver erro, registre approved=false.",
+      "depends_on": [
+        "backend",
+        "documentacao"
+      ],
+      "outputs": [
+        "revisao.json"
+      ],
+      "checks": [
+        {
+          "kind": "json",
+          "path": "revisao.json"
+        },
+        {
+          "kind": "json_equals",
+          "path": "revisao.json",
+          "field": "approved",
+          "value": true
+        }
+      ],
+      "timeout": 600,
+      "retries": 1
+    }
+  ]
+}

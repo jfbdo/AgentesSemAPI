@@ -1,34 +1,23 @@
-# Execuções e artefatos gerados
 runs/
+logs/
 *.log
-orchestrator.log
-
-# Arquivos de estado e temporários
-*.tmp
-*.processing
-*.done
-*.err
-
-# Python
+coordinator.log
+.venv/
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-.venv/
-.pytest_cache/
-
-# Ambientes, chaves e credenciais
+*.egg-info/
+build/
+dist/
 .env*
 auth.json
-token*.txt
-*.pem
+*token*.json
 *.key
+*.pem
+.pytest_cache/
+.DS_Store
+.claude/
+.codex/
+.gemini/
+.opencode/
+*.tmp
 
-# IDEs e editores
-.vscode/
-.idea/
-*.swp
-*.swo
